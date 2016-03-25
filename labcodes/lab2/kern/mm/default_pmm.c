@@ -9,7 +9,7 @@
    usually split, and the remainder added to the list as another free block.
    Please see Page 196~198, Section 8.2 of Yan Wei Min's chinese book "Data Structure -- C programming language"
 */
-// LAB2 EXERCISE 1: YOUR CODE
+// LAB2 EXERCISE 1: 2013011325
 // you should rewrite functions: default_init,default_init_memmap,default_alloc_pages, default_free_pages.
 /*
  * Details of FFMA
@@ -96,15 +96,19 @@ default_alloc_pages(size_t n) {
         }
     }
     if (page != NULL) {
-        list_del(&(page->page_link));
         if (page->property > n) {
             struct Page *p = page + n;
             p->property = page->property - n;
-            list_add(&free_list, &(p->page_link));
-    }
+            p->flags = 0;
+            SetPageProperty(p);
+            list_add(&(page->page_link), &(p->page_link));
+        }
+        page->property = n;
+        list_del(&(page->page_link));
         nr_free -= n;
         ClearPageProperty(page);
     }
+
     return page;
 }
 
@@ -113,13 +117,15 @@ default_free_pages(struct Page *base, size_t n) {
     assert(n > 0);
     struct Page *p = base;
     for (; p != base + n; p ++) {
-        assert(!PageReserved(p) && !PageProperty(p));
+        assert(!PageReserved(p));
+        assert(!PageProperty(p));
         p->flags = 0;
         set_page_ref(p, 0);
     }
     base->property = n;
     SetPageProperty(base);
     list_entry_t *le = list_next(&free_list);
+    le = list_next(&free_list);
     while (le != &free_list) {
         p = le2page(le, page_link);
         le = list_next(le);
@@ -136,7 +142,14 @@ default_free_pages(struct Page *base, size_t n) {
         }
     }
     nr_free += n;
-    list_add(&free_list, &(base->page_link));
+    le = &free_list;
+    while((le = list_next(le)) != &free_list) {
+    	p = le2page(le, page_link);
+    	if (p > base) {
+    		break;
+    	}
+    }
+    list_add_before(le, &(base->page_link));
 }
 
 static size_t
@@ -165,12 +178,14 @@ basic_check(void) {
 
     unsigned int nr_free_store = nr_free;
     nr_free = 0;
+    list_entry_t* le = &free_list;
 
     assert(alloc_page() == NULL);
 
     free_page(p0);
     free_page(p1);
     free_page(p2);
+
     assert(nr_free == 3);
 
     assert((p0 = alloc_page()) != NULL);
@@ -221,7 +236,6 @@ default_check(void) {
 
     unsigned int nr_free_store = nr_free;
     nr_free = 0;
-
     free_pages(p0 + 2, 3);
     assert(alloc_pages(4) == NULL);
     assert(PageProperty(p0 + 2) && p0[2].property == 3);
