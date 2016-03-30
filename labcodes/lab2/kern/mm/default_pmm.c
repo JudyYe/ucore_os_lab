@@ -236,6 +236,7 @@ default_check(void) {
 
     unsigned int nr_free_store = nr_free;
     nr_free = 0;
+
     free_pages(p0 + 2, 3);
     assert(alloc_pages(4) == NULL);
     assert(PageProperty(p0 + 2) && p0[2].property == 3);
