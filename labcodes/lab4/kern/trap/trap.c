@@ -12,6 +12,7 @@
 #include <kdebug.h>
 
 #define TICK_NUM 100
+uint32_t hit_time = 0;
 
 static void print_ticks() {
     cprintf("%d ticks\n",TICK_NUM);
@@ -48,6 +49,15 @@ idt_init(void) {
       *     You don't know the meaning of this instruction? just google it! and check the libs/x86.h to know more.
       *     Notice: the argument of lidt is idt_pd. try to find it!
       */
+	extern uintptr_t __vectors[];
+	int n_gate = 0;
+	for(; n_gate < 256; ++n_gate) {
+		SETGATE(idt[n_gate], 0/*No trap*/, GD_KTEXT, __vectors[n_gate], DPL_KERNEL);
+	}
+	// system call is a trap instead of exception
+	n_gate = 0x80;
+	SETGATE(idt[n_gate], 1, GD_UTEXT, __vectors[n_gate], DPL_USER);
+	lidt(&idt_pd);
 }
 
 static const char *
@@ -186,6 +196,12 @@ trap_dispatch(struct trapframe *tf) {
          * (2) Every TICK_NUM cycle, you can print some info using a funciton, such as print_ticks().
          * (3) Too Simple? Yes, I think so!
          */
+    	if (hit_time++ > 100) {
+        	print_ticks();
+        	hit_time = 0;
+    	}
+
+
         break;
     case IRQ_OFFSET + IRQ_COM1:
         c = cons_getc();
