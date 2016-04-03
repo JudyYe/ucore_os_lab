@@ -17,6 +17,7 @@
 #include <sync.h>
 
 #define TICK_NUM 100
+uint32_t hit_time = 0;
 
 static void print_ticks() {
     cprintf("%d ticks\n",TICK_NUM);
@@ -56,6 +57,14 @@ idt_init(void) {
      /* LAB5 YOUR CODE */ 
      //you should update your lab1 code (just add ONE or TWO lines of code), let user app to use syscall to get the service of ucore
      //so you should setup the syscall interrupt gate in here
+	extern uintptr_t __vectors[];
+	int n_gate = 0;
+	for(; n_gate < 256; ++n_gate) {
+		SETGATE(idt[n_gate], 0/*No trap*/, GD_KTEXT, __vectors[n_gate], DPL_KERNEL);
+	}
+	// system call is a trap instead of exception
+	SETGATE(idt[T_SYSCALL], 1, GD_KTEXT, __vectors[T_SYSCALL], DPL_USER);
+	lidt(&idt_pd);
 }
 
 static const char *
@@ -223,7 +232,11 @@ trap_dispatch(struct trapframe *tf) {
         /* you should upate you lab1 code (just add ONE or TWO lines of code):
          *    Every TICK_NUM cycle, you should set current process's current->need_resched = 1
          */
-  
+      	if (hit_time++ > TICK_NUM) {
+        	print_ticks();
+        	hit_time = 0;
+        	current->need_resched = 1;
+    	}
         break;
     case IRQ_OFFSET + IRQ_COM1:
         c = cons_getc();

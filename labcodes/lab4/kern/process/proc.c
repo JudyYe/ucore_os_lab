@@ -325,7 +325,7 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
 		proc->pid = get_pid();
 		nr_process ++;
 		proc->parent = current;
-		//    5. insert proc_struct into hash_list && proc_list
+	//    5. insert proc_struct into hash_list && proc_list
 		//hash_list[proc->pid] = proc->hash_link;
 		hash_proc(proc);
 		list_add(&proc_list, &proc->list_link);
