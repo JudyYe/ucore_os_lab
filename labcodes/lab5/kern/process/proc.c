@@ -221,7 +221,6 @@ proc_run(struct proc_struct *proc) {
             load_esp0(next->kstack + KSTACKSIZE);
             lcr3(next->cr3);
             switch_to(&(prev->context), &(next->context));
-            cprintf("switch from %d %s, to %d %s", prev->pid, prev->name, next->pid, next->name);
         }
         local_intr_restore(intr_flag);
     }
