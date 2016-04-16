@@ -5,6 +5,7 @@ int
 main(void) {
     cprintf("Hello world!!.\n");
     cprintf("I am process %d.\n", getpid());
+    yield();
     cprintf("hello pass.\n");
     return 0;
 }

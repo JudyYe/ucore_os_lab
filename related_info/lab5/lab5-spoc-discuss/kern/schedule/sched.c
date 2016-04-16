@@ -3,6 +3,7 @@
 #include <proc.h>
 #include <sched.h>
 #include <assert.h>
+#include <stdio.h>
 
 void
 wakeup_proc(struct proc_struct *proc) {
@@ -44,6 +45,8 @@ schedule(void) {
         }
         next->runs ++;
         if (next != current) {
+        	cprintf("schedule from %d to %d\n", current->pid, next->pid);
+        	cprintf("context from %x to %x\n", current->context.eip, next->context.eip);
             proc_run(next);
         }
     }

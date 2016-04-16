@@ -805,11 +805,25 @@ kernel_execve(const char *name, unsigned char *binary, size_t size) {
 
 // user_main - kernel thread used to exec a user program
 static int
+user_hello(void *arg) {
+#ifdef TEST
+    KERNEL_EXECVE2(TEST, TESTSTART, TESTSIZE);
+#else
+    cprintf("start: %d\n", current->pid);
+    KERNEL_EXECVE(hello);
+
+#endif
+    panic("user_main execve failed.\n");
+}
+
+static int
 user_main(void *arg) {
 #ifdef TEST
     KERNEL_EXECVE2(TEST, TESTSTART, TESTSIZE);
 #else
-    KERNEL_EXECVE(exit);
+    cprintf("start: %d\n", current->pid);
+    KERNEL_EXECVE(yield);
+
 #endif
     panic("user_main execve failed.\n");
 }
@@ -823,6 +837,11 @@ init_main(void *arg) {
     int pid = kernel_thread(user_main, NULL, 0);
     if (pid <= 0) {
         panic("create user_main failed.\n");
+    }
+
+    pid = kernel_thread(user_hello, NULL, 0);
+    if(pid <= 0) {
+    	panic("create process hello failed.\n");
     }
 
     while (do_wait(0, NULL) == 0) {
